@@ -101,4 +101,5 @@ Output:
   "library": "your-library",
   "embedding": [0.012, -0.019, ...]
 }
+
 ```
