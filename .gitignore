@@ -1,0 +1,31 @@
+# Logs and temporary files
+*.log
+*.swp
+tmp/
+
+# System files
+.DS_Store
+
+# Dependency management
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+icons/
+
+# Editor backups
+*~
+
+# Exception to the rule (don't ignore this file)
+!.gitignore
+
+# IDEs
+!.vscode
+!.cursor
+!.windsurf
+!.codegpt
+
+# Secrets
+.env
