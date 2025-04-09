@@ -2,6 +2,8 @@
 
 A Node.js application that uses Google's Generative AI to automatically generate comprehensive metadata for SVG icons. This tool processes SVG icons and creates a rich dataset with descriptions, tags, categories, and vector embeddings that can be used for semantic search.
 
+[Build Your Own AI-Powered Icon Search Engine](https://medium.com/p/a3400015324b/edit)
+
 ## Features
 
 - **Automatic Metadata Generation**: Uses Google's Gemini AI to analyze icons and generate descriptive metadata
