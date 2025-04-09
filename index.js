@@ -238,28 +238,120 @@ async function processIconFiles() {
 	const iconsPath = path.join(process.cwd(), "icons", iconLibrary);
 
 	try {
+		console.log("🚀 Starting icon processing...");
+
 		// Check if the folder exists, if not, create it
 		if (!fsSync.existsSync(iconsPath)) {
 			console.error(`The "icons/${iconLibrary}" folder does not exist`);
 			fsSync.mkdirSync(iconsPath, { recursive: true });
-			console.log(`Created "icons/${iconLibrary}" folder`);
+			console.log(`✅ Created "icons/${iconLibrary}" folder`);
 			return;
 		}
 
 		// Get all files
+		console.log("📁 Reading icon files...");
 		const files = await fs.readdir(iconsPath);
+		console.log(`📊 Found ${files.length} files to process`);
+
 		const fileMap = processFiles(files, iconsPath);
+		console.log(`🗺️ Created file map with ${fileMap.size} entries`);
 
 		// Show pair information
+		console.log("\n📋 File Information:");
 		logFileInfo(fileMap);
 
 		// Process each icon
-		await processIcons(fileMap, iconsPath);
+		console.log("\n🔄 Processing icons...");
+		let processed = 0;
+		const total = fileMap.size;
 
-		console.log("Done");
+		for (const [name, pair] of fileMap.entries()) {
+			if (!pair.svg) continue;
+			processed++;
+			console.log(`\n⚙️ Processing icon ${processed}/${total}: ${name}`);
+
+			const pngOutputPath = path.join(iconsPath, `${name}.png`);
+			try {
+				console.log(`   Converting SVG to PNG...`);
+				await generatePNGFromSVG(pair.svg, pngOutputPath);
+
+				// Check if the corresponding JSON exists, if not, create it
+				let iconJson;
+				let jsonPath;
+
+				if (!pair.json) {
+					console.log(`   Creating JSON file for "${name}"...`);
+					iconJson = createTemporaryIconJson(name);
+					jsonPath = path.join(iconsPath, `${name}.json`);
+					await fs.writeFile(jsonPath, JSON.stringify(iconJson, null, 2));
+					pair.json = JSON.stringify(iconJson);
+					pair.jsonPath = jsonPath;
+					console.log(`   ✅ Created temporary JSON file`);
+				} else {
+					iconJson = JSON.parse(pair.json);
+					jsonPath = pair.jsonPath;
+				}
+
+				console.log(`   Generating AI description...`);
+				const prompt = createPrompt(name, iconJson);
+				await getDescription(name, prompt, pngOutputPath);
+				console.log(`   ✅ Icon processing complete`);
+				await delay(1000);
+			} catch (error) {
+				console.error(`❌ Error processing icon "${name}":`, error);
+			}
+		}
+
+		console.log("\n✨ All icons processed successfully!");
 	} catch (error) {
-		console.error("Error processing icon files:", error);
+		console.error("❌ Error processing icon files:", error);
 	}
+}
+
+/**
+ * Processes files and creates a map
+ * @param {Array} files - File list
+ * @param {string} iconsPath - Icons path
+ * @returns {Map} - File map
+ */
+function processFiles(files, iconsPath) {
+	console.log("🔍 Analyzing files...");
+	const fileMap = new Map();
+	let svgCount = 0;
+	let jsonCount = 0;
+
+	files.forEach((file) => {
+		const extension = path.extname(file);
+		const baseName = path.basename(file, extension);
+
+		// Only process SVG and JSON
+		if (extension !== ".svg" && extension !== ".json") {
+			return;
+		}
+
+		if (!fileMap.has(baseName)) {
+			fileMap.set(baseName, {
+				name: baseName,
+				svg: "",
+				json: null,
+				jsonPath: null,
+			});
+		}
+
+		const pair = fileMap.get(baseName);
+
+		if (extension === ".svg") {
+			pair.svg = fsSync.readFileSync(path.join(iconsPath, file), "utf-8");
+			svgCount++;
+		} else if (extension === ".json") {
+			pair.jsonPath = path.join(iconsPath, file);
+			pair.json = fsSync.readFileSync(pair.jsonPath, "utf-8");
+			jsonCount++;
+		}
+	});
+
+	console.log(`📈 Found ${svgCount} SVG files and ${jsonCount} JSON files`);
+	return fileMap;
 }
 
 /**

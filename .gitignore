@@ -8,11 +8,11 @@ tmp/
 
 # Dependency management
 node_modules/
+test/
 
 # Build artifacts
 dist/
 build/
-
 icons/
 
 # Editor backups
